@@ -4,8 +4,8 @@ import { Package, Lock, Mail } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export default function Login() {
-  const [email, setEmail] = useState('admin@ledger.com');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
@@ -44,8 +44,8 @@ export default function Login() {
           <div className="w-16 h-16 rounded-2xl primary-gradient flex items-center justify-center text-on-primary mb-4 shadow-lg shadow-primary/20">
             <Package size={32} />
           </div>
-          <h1 className="font-headline font-black text-2xl text-blue-800 tracking-tight">The Curated Ledger</h1>
-          <p className="text-on-surface-variant font-body text-sm">Precision Architect Access</p>
+          <h1 className="font-headline font-black text-2xl text-blue-800 tracking-tight">Purchasing Management</h1>
+          <p className="text-on-surface-variant font-body text-sm">Enterprise Procurement Access</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -90,13 +90,13 @@ export default function Login() {
             disabled={loading}
             className="w-full primary-gradient text-on-primary py-4 rounded-xl font-headline font-bold text-sm shadow-xl shadow-primary/20 hover:scale-[0.98] transition-all disabled:opacity-50"
           >
-            {loading ? 'Authenticating...' : 'Sign In to Ledger'}
+            {loading ? 'Authenticating...' : 'Sign In to System'}
           </button>
         </form>
 
         <div className="mt-8 pt-6 border-t border-outline-variant/10 text-center">
           <p className="text-xs text-on-surface-variant">
-            © 2024 The Curated Ledger • Secure Access
+            © 2024 Purchasing Management • Secure Access
           </p>
         </div>
       </motion.div>

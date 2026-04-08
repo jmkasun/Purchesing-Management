@@ -126,6 +126,70 @@
     --color-on-error-container: #ffdad6;
   }
 
+  .dim {
+    --color-background: #15202b;
+    --color-surface: #1c2732;
+    --color-surface-dim: #15202b;
+    --color-surface-bright: #253341;
+    --color-on-surface: #f7f9f9;
+    --color-surface-container-lowest: #0d1216;
+    --color-surface-container-low: #192734;
+    --color-surface-container: #22303c;
+    --color-surface-container-high: #2c3d4e;
+    --color-surface-container-highest: #38444d;
+    --color-on-surface-variant: #8899a6;
+    --color-outline: #38444d;
+    --color-outline-variant: #1c2732;
+    --color-primary: #1d9bf0;
+    --color-on-primary: #ffffff;
+    --color-primary-container: #004a77;
+    --color-on-primary-container: #d4e3ff;
+    --color-secondary: #8899a6;
+    --color-on-secondary: #ffffff;
+    --color-secondary-container: #3d5466;
+    --color-on-secondary-container: #d1e4ff;
+    --color-tertiary: #ffd400;
+    --color-on-tertiary: #000000;
+    --color-tertiary-container: #ffd400;
+    --color-on-tertiary-container: #000000;
+    --color-error: #f4212e;
+    --color-on-error: #ffffff;
+    --color-error-container: #670009;
+    --color-on-error-container: #ffdad6;
+  }
+
+  .soft {
+    --color-background: #faf9f6;
+    --color-surface: #f3f2ee;
+    --color-surface-dim: #e8e7e3;
+    --color-surface-bright: #ffffff;
+    --color-on-surface: #4a4a4a;
+    --color-surface-container-lowest: #ffffff;
+    --color-surface-container-low: #fdfcf9;
+    --color-surface-container: #f5f4f0;
+    --color-surface-container-high: #ebeae6;
+    --color-surface-container-highest: #e2e1dd;
+    --color-on-surface-variant: #7c7c7c;
+    --color-outline: #d1d1d1;
+    --color-outline-variant: #e5e5e5;
+    --color-primary: #d4a373;
+    --color-on-primary: #ffffff;
+    --color-primary-container: #faedcd;
+    --color-on-primary-container: #8b5e34;
+    --color-secondary: #ccd5ae;
+    --color-on-secondary: #4a4a4a;
+    --color-secondary-container: #e9edc9;
+    --color-on-secondary-container: #4a4a4a;
+    --color-tertiary: #a3b18a;
+    --color-on-tertiary: #ffffff;
+    --color-tertiary-container: #dad7cd;
+    --color-on-tertiary-container: #3a5a40;
+    --color-error: #e07a5f;
+    --color-on-error: #ffffff;
+    --color-error-container: #f2cc8f;
+    --color-on-error-container: #3d405b;
+  }
+
   html, body {
     @apply font-body bg-background text-on-surface transition-colors duration-300;
   }

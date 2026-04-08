@@ -9,14 +9,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 // Fix for Aiven/Heroku self-signed certificate issues
-if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
-  process.env.PGSSLMODE = 'no-verify';
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-}
-
-// Fix for Aiven/Heroku self-signed certificate issues
-// Use environment variables directly in the Pool config instead of runtime overrides if possible
-// but keeping them for now as they are common fixes.
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 const { Pool } = pg;
 const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
@@ -30,10 +23,12 @@ console.log("Database connection attempt:", {
 
 const pool = new Pool({
   connectionString,
-  ssl: {
-    rejectUnauthorized: false,
-  },
-  connectionTimeoutMillis: 10000, // 10s timeout
+  ssl: connectionString?.includes('localhost') || connectionString?.includes('127.0.0.1')
+    ? false
+    : { rejectUnauthorized: false },
+  max: 3, // Reduce max connections to avoid exhausting slots
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
 });
 
 pool.on('error', (err) => {
@@ -356,7 +351,15 @@ async function initDb() {
 }
 
 // Auth Middleware
-const authenticateToken = (req: any, res: any, next: any) => {
+const authenticateToken = async (req: any, res: any, next: any) => {
+  if (!dbInitialized) {
+    try {
+      await initDb();
+    } catch (err) {
+      console.error("Auth middleware: DB init failed", err);
+      // Don't block if it's just a connection issue that might resolve
+    }
+  }
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -466,7 +469,7 @@ app.get("/api/materials", authenticateToken, async (req, res) => {
     let params: any[] = [];
     if (req.user.role !== 'super_admin') {
       query += " AND account_id = $1";
-      params.push(req.user.account_id);
+      params.push(req.user.account_id || null);
     }
     const result = await pool.query(query + " ORDER BY material_id", params);
     res.json(result.rows);
@@ -520,12 +523,17 @@ app.get("/api/categories", authenticateToken, async (req, res) => {
     let params: any[] = [];
     if (req.user.role !== 'super_admin') {
       query += " AND (account_id = $1 OR account_id IS NULL)";
-      params.push(req.user.account_id);
+      params.push(req.user.account_id || null);
     }
     const result = await pool.query(query + " ORDER BY name", params);
     res.json(result.rows);
   } catch (err: any) {
-    res.status(500).json({ message: "Server error" });
+    console.error("Error fetching categories:", {
+      message: err.message,
+      stack: err.stack,
+      user: req.user
+    });
+    res.status(500).json({ message: "Server error", details: err.message });
   }
 });
 
@@ -696,7 +704,7 @@ app.get("/api/quotations", authenticateToken, async (req, res) => {
     let params: any[] = [];
     if (req.user.role !== 'super_admin') {
       query += " AND q.account_id = $1";
-      params.push(req.user.account_id);
+      params.push(req.user.account_id || null);
     }
     const result = await pool.query(query + " ORDER BY q.date_received DESC", params);
     res.json(result.rows);
@@ -825,7 +833,7 @@ app.get("/api/projects", authenticateToken, async (req, res) => {
     let params: any[] = [];
     if (req.user.role !== 'super_admin') {
       query += " AND account_id = $1";
-      params.push(req.user.account_id);
+      params.push(req.user.account_id || null);
     }
     const result = await pool.query(query + " ORDER BY name", params);
     res.json(result.rows);
@@ -878,7 +886,7 @@ app.get("/api/stats", authenticateToken, async (req, res) => {
     let params: any[] = [];
     if (req.user.role !== 'super_admin') {
       whereClause += " AND account_id = $1";
-      params.push(req.user.account_id);
+      params.push(req.user.account_id || null);
     }
     const totalMaterials = await pool.query(`SELECT COUNT(*) FROM s_materials ${whereClause}`, params);
     const totalValue = await pool.query(`SELECT SUM(current_stock * unit_price) FROM s_materials ${whereClause}`, params);
@@ -937,7 +945,7 @@ app.get("/api/users", authenticateToken, async (req, res) => {
 });
 
 app.post("/api/users", authenticateToken, async (req, res) => {
-  const { email, password, full_name, role, account_id } = req.body;
+  const { email, password, full_name, role, account_id, avatar_url } = req.body;
   if (req.user.role !== 'super_admin') {
     if (role === 'super_admin') return res.status(403).json({ message: "Unauthorized role" });
     if (account_id && account_id !== req.user.account_id) return res.status(403).json({ message: "Unauthorized account" });
@@ -945,8 +953,8 @@ app.post("/api/users", authenticateToken, async (req, res) => {
   const targetAccountId = req.user.role === 'super_admin' ? account_id : req.user.account_id;
   try {
     const result = await pool.query(
-      "INSERT INTO s_users (email, password, full_name, role, account_id) VALUES ($1, $2, $3, $4, $5) RETURNING id, email, full_name, role, account_id",
-      [email, password, full_name, role || 'user', targetAccountId]
+      "INSERT INTO s_users (email, password, full_name, role, account_id, avatar_url) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, email, full_name, role, account_id, avatar_url",
+      [email, password, full_name, role || 'user', targetAccountId, avatar_url]
     );
     res.status(201).json(result.rows[0]);
   } catch (err: any) {
@@ -957,7 +965,7 @@ app.post("/api/users", authenticateToken, async (req, res) => {
 
 app.put("/api/users/:id", authenticateToken, async (req, res) => {
   const { id } = req.params;
-  const { full_name, role, account_id, password } = req.body;
+  const { full_name, role, account_id, password, avatar_url } = req.body;
   try {
     const userCheck = await pool.query("SELECT account_id, role FROM s_users WHERE id = $1", [id]);
     if (userCheck.rows.length === 0) return res.status(404).json({ message: "User not found" });
@@ -969,6 +977,10 @@ app.put("/api/users/:id", authenticateToken, async (req, res) => {
     let query = "UPDATE s_users SET full_name = $1, role = $2";
     let params = [full_name, role];
     let paramCount = 3;
+    if (avatar_url !== undefined) {
+      query += `, avatar_url = $${paramCount++}`;
+      params.push(avatar_url);
+    }
     if (req.user.role === 'super_admin' && account_id) {
       query += `, account_id = $${paramCount++}`;
       params.push(account_id);

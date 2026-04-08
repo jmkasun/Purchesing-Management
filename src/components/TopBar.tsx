@@ -1,10 +1,25 @@
-import { Search, Bell, Settings, Sun, Moon, LogOut } from 'lucide-react';
+import { Search, Bell, Settings, Sun, Moon, LogOut, Palette, Monitor } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 
 export default function TopBar() {
   const { user, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
+
+  const themes: { id: 'light' | 'dark' | 'dim' | 'soft', icon: any, label: string }[] = [
+    { id: 'light', icon: Sun, label: 'Light' },
+    { id: 'dark', icon: Moon, label: 'Dark' },
+    { id: 'dim', icon: Monitor, label: 'Dim' },
+    { id: 'soft', icon: Palette, label: 'Soft' },
+  ];
+
+  const cycleTheme = () => {
+    const currentIndex = themes.findIndex(t => t.id === theme);
+    const nextIndex = (currentIndex + 1) % themes.length;
+    setTheme(themes[nextIndex].id);
+  };
+
+  const CurrentIcon = themes.find(t => t.id === theme)?.icon || Sun;
 
   return (
     <header className="fixed top-0 right-0 left-0 md:left-64 z-50 glass-nav border-b border-outline-variant/10 h-16 flex justify-between items-center px-6">
@@ -21,11 +36,12 @@ export default function TopBar() {
 
       <div className="flex items-center gap-2">
         <button 
-          onClick={toggleTheme}
-          className="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-colors"
-          title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+          onClick={cycleTheme}
+          className="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-colors flex items-center gap-2"
+          title={`Current: ${theme}. Click to cycle themes.`}
         >
-          {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+          <CurrentIcon size={20} />
+          <span className="text-xs font-medium hidden lg:block capitalize">{theme}</span>
         </button>
         <button className="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-colors relative">
           <Bell size={20} />

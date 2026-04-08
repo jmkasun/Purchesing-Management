@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Plus, Edit2, Trash2, Save, X, ChevronDown, ChevronUp, Settings as SettingsIcon, Users, Building, Shield, UserPlus } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, ChevronDown, ChevronUp, Settings as SettingsIcon, Users, Building, Shield, UserPlus, Camera, Upload } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { User as UserType, Account, Project } from '../types';
@@ -253,7 +253,7 @@ export default function Settings() {
         throw new Error(data.message || 'Failed to add user');
       }
 
-      setNewUser({ email: '', password: '', full_name: '', role: 'user', account_id: '' });
+      setNewUser({ email: '', password: '', full_name: '', role: 'user', account_id: '', avatar_url: '' } as any);
       setIsAddingUser(false);
       fetchUsers();
     } catch (err: any) {
@@ -276,7 +276,8 @@ export default function Settings() {
           full_name: editingUser.full_name,
           role: editingUser.role,
           account_id: editingUser.account_id,
-          password: (editingUser as any).newPassword || undefined
+          password: (editingUser as any).newPassword || undefined,
+          avatar_url: editingUser.avatar_url
         })
       });
 
@@ -316,6 +317,27 @@ export default function Settings() {
     } catch (err: any) {
       setError(err.message);
     }
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, isEditing: boolean) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 1024 * 1024) {
+      setError('Image size must be less than 1MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      if (isEditing && editingUser) {
+        setEditingUser({ ...editingUser, avatar_url: base64String });
+      } else {
+        setNewUser({ ...newUser, avatar_url: base64String } as any);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -381,6 +403,24 @@ export default function Settings() {
                           </button>
                         </div>
                         <form onSubmit={handleAddUser} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="md:col-span-2 flex flex-col items-center gap-4 mb-4">
+                            <div className="relative group">
+                              <div className="w-24 h-24 rounded-full bg-surface-container-low border-2 border-primary/20 overflow-hidden">
+                                {(newUser as any).avatar_url ? (
+                                  <img src={(newUser as any).avatar_url} alt="Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-on-surface-variant/40">
+                                    <Users size={40} />
+                                  </div>
+                                )}
+                              </div>
+                              <label className="absolute inset-0 flex items-center justify-center bg-black/40 text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-full">
+                                <Camera size={24} />
+                                <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, false)} />
+                              </label>
+                            </div>
+                            <p className="text-xs text-on-surface-variant">Click to upload profile picture</p>
+                          </div>
                           <input
                             type="text"
                             value={newUser.full_name}
@@ -443,6 +483,24 @@ export default function Settings() {
                           </button>
                         </div>
                         <form onSubmit={handleUpdateUser} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="md:col-span-2 flex flex-col items-center gap-4 mb-4">
+                            <div className="relative group">
+                              <div className="w-24 h-24 rounded-full bg-surface-container-low border-2 border-primary/20 overflow-hidden">
+                                {editingUser.avatar_url ? (
+                                  <img src={editingUser.avatar_url} alt="Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-on-surface-variant/40">
+                                    <Users size={40} />
+                                  </div>
+                                )}
+                              </div>
+                              <label className="absolute inset-0 flex items-center justify-center bg-black/40 text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-full">
+                                <Camera size={24} />
+                                <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, true)} />
+                              </label>
+                            </div>
+                            <p className="text-xs text-on-surface-variant">Click to upload profile picture</p>
+                          </div>
                           <input
                             type="text"
                             value={editingUser.full_name}
@@ -501,43 +559,63 @@ export default function Settings() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-outline-variant/10">
-                          {users.map((u) => (
-                            <tr key={u.id} className="group hover:bg-surface-container-low/50 transition-colors">
-                              <td className="py-4 px-4 font-semibold text-on-surface">{u.full_name}</td>
-                              <td className="py-4 px-4 text-on-surface-variant">{u.email}</td>
-                              <td className="py-4 px-4">
-                                {u.role === 'super_admin' ? (
-                                  <div className="flex flex-col gap-0.5">
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-secondary/10 text-secondary uppercase w-fit">SUPER</span>
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-secondary/10 text-secondary uppercase w-fit">ADMIN</span>
+                          {users.map((u) => {
+                            const canEdit = user?.role === 'super_admin' || (user?.role === 'admin' && u.role !== 'super_admin');
+                            return (
+                              <tr key={u.id} className="group hover:bg-surface-container-low/50 transition-colors">
+                                <td className="py-4 px-4">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-surface-container-low overflow-hidden border border-outline-variant/10 flex-shrink-0">
+                                      {u.avatar_url ? (
+                                        <img src={u.avatar_url} alt={u.full_name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                      ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-on-surface-variant/40 bg-primary/5">
+                                          <Users size={14} />
+                                        </div>
+                                      )}
+                                    </div>
+                                    <span className="font-semibold text-on-surface">{u.full_name}</span>
                                   </div>
-                                ) : (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary uppercase">ADMIN</span>
-                                )}
-                              </td>
-                              <td className="py-4 px-4 text-on-surface-variant text-sm">
-                                {u.account_name || 'System'}
-                              </td>
-                              <td className="py-4 px-4 text-right">
-                                <div className="flex justify-end gap-2">
-                                  <button
-                                    onClick={() => setEditingUser(u)}
-                                    className="p-2 text-on-surface-variant/60 hover:text-primary transition-colors"
-                                  >
-                                    <Edit2 size={16} />
-                                  </button>
-                                  {u.id !== user?.id && (
-                                    <button
-                                      onClick={() => handleDeleteUser(u.id)}
-                                      className="p-2 text-on-surface-variant/60 hover:text-error transition-colors"
-                                    >
-                                      <Trash2 size={16} />
-                                    </button>
+                                </td>
+                                <td className="py-4 px-4 text-on-surface-variant">{u.email}</td>
+                                <td className="py-4 px-4">
+                                  {u.role === 'super_admin' ? (
+                                    <div className="flex flex-col gap-0.5">
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-secondary/10 text-secondary uppercase w-fit">SUPER</span>
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-secondary/10 text-secondary uppercase w-fit">ADMIN</span>
+                                    </div>
+                                  ) : (
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary uppercase">ADMIN</span>
                                   )}
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
+                                </td>
+                                <td className="py-4 px-4 text-on-surface-variant text-sm">
+                                  {u.account_name || 'System'}
+                                </td>
+                                <td className="py-4 px-4 text-right">
+                                  <div className="flex justify-end gap-2">
+                                    {canEdit && (
+                                      <>
+                                        <button
+                                          onClick={() => setEditingUser(u)}
+                                          className="p-2 text-on-surface-variant/60 hover:text-primary transition-colors"
+                                        >
+                                          <Edit2 size={16} />
+                                        </button>
+                                        {u.id !== user?.id && (
+                                          <button
+                                            onClick={() => handleDeleteUser(u.id)}
+                                            className="p-2 text-on-surface-variant/60 hover:text-error transition-colors"
+                                          >
+                                            <Trash2 size={16} />
+                                          </button>
+                                        )}
+                                      </>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>

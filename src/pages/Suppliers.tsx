@@ -399,7 +399,6 @@ export default function Suppliers() {
                             className="px-3 py-2 bg-surface-container-low border border-outline-variant/10 rounded-lg text-sm outline-none focus:ring-1 focus:ring-primary"
                           />
                           <input
-                            required
                             type="email"
                             placeholder="Email Address"
                             value={contact.email}

@@ -36,8 +36,8 @@ export default function Sidebar() {
             <Package size={20} />
           </div>
           <div>
-            <h1 className="font-headline font-black text-primary dark:text-primary text-lg leading-tight">Procurement</h1>
-            <p className="font-headline tracking-wide text-[10px] uppercase text-on-surface-variant">Precision Architect</p>
+            <h1 className="font-headline font-black text-primary dark:text-primary text-lg leading-tight">Purchasing</h1>
+            <p className="font-headline tracking-wide text-[10px] uppercase text-on-surface-variant">Management</p>
           </div>
         </div>
       </div>

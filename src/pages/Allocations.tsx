@@ -229,8 +229,8 @@ export default function Allocations() {
                 <th className="px-4 md:px-6 py-4 font-inter font-bold text-[10px] text-on-surface-variant uppercase tracking-widest">Material</th>
                 <th className="px-4 md:px-6 py-4 font-inter font-bold text-[10px] text-on-surface-variant uppercase tracking-widest">Qty</th>
                 <th className="px-4 md:px-6 py-4 font-inter font-bold text-[10px] text-on-surface-variant uppercase tracking-widest text-center">Status</th>
-                <th className="hidden md:table-cell px-6 py-4 font-inter font-bold text-[10px] text-on-surface-variant uppercase tracking-widest">Date</th>
-                <th className="hidden md:table-cell px-6 py-4 font-inter font-bold text-[10px] text-on-surface-variant uppercase tracking-widest">Responsible</th>
+                <th className="px-4 md:px-6 py-4 font-inter font-bold text-[10px] text-on-surface-variant uppercase tracking-widest">Date</th>
+                <th className="px-4 md:px-6 py-4 font-inter font-bold text-[10px] text-on-surface-variant uppercase tracking-widest">Responsible</th>
                 <th className="px-4 md:px-6 py-4"></th>
               </tr>
             </thead>
@@ -253,10 +253,10 @@ export default function Allocations() {
                         <p className="font-inter text-sm text-on-surface-variant font-medium">{a.material_name}</p>
                       </div>
                     </td>
-                    <td className="px-6 py-5">
+                    <td className="px-4 md:px-6 py-5">
                       <p className="font-headline text-sm font-extrabold text-on-surface">{a.quantity}</p>
                     </td>
-                    <td className="px-6 py-5 text-center">
+                    <td className="px-4 md:px-6 py-5 text-center">
                       <span className={cn(
                         "inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase",
                         a.status === 'dispatched' ? "bg-tertiary-container/30 text-tertiary" : 
@@ -266,19 +266,19 @@ export default function Allocations() {
                         {a.status.replace('_', ' ')}
                       </span>
                     </td>
-                    <td className="px-6 py-5">
-                      <p className="font-inter text-xs text-on-surface">{format(new Date(a.date_allocated), 'MMM dd, yyyy')}</p>
-                      <p className="font-inter text-[10px] text-outline">{format(new Date(a.date_allocated), 'hh:mm a')}</p>
+                    <td className="px-4 md:px-6 py-5">
+                      <p className="font-inter text-[10px] md:text-xs text-on-surface">{format(new Date(a.date_allocated), 'MMM dd, yyyy')}</p>
+                      <p className="font-inter text-[9px] md:text-[10px] text-outline">{format(new Date(a.date_allocated), 'hh:mm a')}</p>
                     </td>
-                    <td className="px-6 py-5">
+                    <td className="px-4 md:px-6 py-5">
                       <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-primary-fixed flex items-center justify-center text-[10px] font-bold text-primary">
+                        <div className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-primary-fixed flex items-center justify-center text-[8px] md:text-[10px] font-bold text-primary shrink-0">
                           {a.person_responsible.split(' ').map(n => n[0]).join('')}
                         </div>
-                        <p className="font-inter text-xs text-on-surface">{a.person_responsible}</p>
+                        <p className="font-inter text-[10px] md:text-xs text-on-surface truncate max-w-[60px] md:max-w-none">{a.person_responsible}</p>
                       </div>
                     </td>
-                    <td className="px-6 py-5 text-right relative">
+                    <td className="px-4 md:px-6 py-5 text-right relative">
                       <button 
                         onClick={() => setActiveMenu(activeMenu === a.id ? null : a.id)}
                         className="opacity-0 group-hover:opacity-100 transition-opacity p-2 text-on-surface-variant hover:text-primary rounded-lg hover:bg-primary/10"
