@@ -14,8 +14,17 @@ dotenv.config();
 // but keeping them for now as they are common fixes.
 
 const { Pool } = pg;
+const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+
+console.log("Database connection attempt:", {
+  hasConnectionString: !!connectionString,
+  connectionStringPrefix: connectionString ? connectionString.split(':')[0] : 'none',
+  env: process.env.NODE_ENV,
+  isVercel: !!process.env.VERCEL
+});
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || process.env.POSTGRES_URL,
+  connectionString,
   ssl: {
     rejectUnauthorized: false,
   },
@@ -57,15 +66,17 @@ async function initDb() {
 
   initializing = true;
   try {
+    console.log("initDb: Checking if tables exist...");
     // Check if tables already exist to skip heavy initialization
     const tableCheck = await pool.query("SELECT 1 FROM information_schema.tables WHERE table_name = 's_users' LIMIT 1");
     if (tableCheck.rows.length > 0) {
+      console.log("initDb: Tables already exist, skipping initialization.");
       dbInitialized = true;
       initializing = false;
       return;
     }
 
-    console.log("Initializing database schema...");
+    console.log("initDb: Initializing database schema...");
     await pool.query(`
       CREATE TABLE IF NOT EXISTS s_accounts (
         id SERIAL PRIMARY KEY,
@@ -355,41 +366,63 @@ const authenticateToken = (req: any, res: any, next: any) => {
 
 // API Routes
 app.get("/api/health", async (req, res) => {
-  try {
-    const dbUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
-    if (!dbUrl) {
-      return res.status(500).json({ 
-        status: "error", 
-        message: "Database environment variables are missing (DATABASE_URL or POSTGRES_URL)" 
-      });
+  const dbUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+  const healthInfo = {
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    env: process.env.NODE_ENV,
+    isVercel: !!process.env.VERCEL,
+    db: {
+      hasUrl: !!dbUrl,
+      urlPrefix: dbUrl ? dbUrl.split(':')[0] : 'none',
+      connected: false,
+      initialized: dbInitialized,
+      error: null as string | null
     }
+  };
+
+  try {
+    if (!dbUrl) {
+      healthInfo.status = "error";
+      healthInfo.db.error = "Database URL missing";
+      return res.status(500).json(healthInfo);
+    }
+    
+    const start = Date.now();
     await pool.query("SELECT 1");
-    res.json({ status: "ok", database: "connected", initialized: dbInitialized });
+    healthInfo.db.connected = true;
+    healthInfo.db.latency = `${Date.now() - start}ms`;
+    
+    res.json(healthInfo);
   } catch (err: any) {
-    res.status(500).json({ 
-      status: "error", 
-      database: "disconnected", 
-      message: err.message 
-    });
+    console.error("Health check DB error:", err);
+    healthInfo.status = "error";
+    healthInfo.db.error = err.message;
+    res.status(500).json(healthInfo);
   }
 });
 
 app.post("/api/auth/login", async (req, res) => {
   const { email, password } = req.body;
+  console.log(`Login attempt for: ${email}`);
   try {
     // Ensure DB is initialized
     if (!dbInitialized) {
+      console.log("Login: Triggering lazy initDb...");
       await initDb();
     }
     
+    console.log("Login: Querying user...");
     const result = await pool.query(`
       SELECT u.*, a.name as account_name 
       FROM s_users u 
       LEFT JOIN s_accounts a ON u.account_id = a.id 
       WHERE u.email = $1 AND u.deleted_at IS NULL
     `, [email]);
+    
     const user = result.rows[0];
     if (user && password === user.password) {
+      console.log("Login: Success");
       const token = jwt.sign({ 
         id: user.id, 
         email: user.email, 
@@ -409,10 +442,15 @@ app.post("/api/auth/login", async (req, res) => {
         } 
       });
     } else {
+      console.log("Login: Invalid credentials");
       res.status(401).json({ message: "Invalid credentials" });
     }
   } catch (err: any) {
-    console.error("Login error:", err);
+    console.error("Login error details:", {
+      message: err.message,
+      stack: err.stack,
+      code: err.code
+    });
     res.status(500).json({ message: "Server error", details: err.message });
   }
 });
