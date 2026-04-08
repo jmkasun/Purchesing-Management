@@ -1,0 +1,180 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-headline: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-label: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --color-on-background: #26343d;
+  --color-on-tertiary: #f6f9ff;
+  --color-secondary-container: #d5e3fc;
+  --color-secondary: #526074;
+  --color-surface-container-lowest: #ffffff;
+  --color-primary-dim: #2848b7;
+  --color-inverse-surface: #0a0f12;
+  --color-surface-dim: #cadde9;
+  --color-on-tertiary-container: #00314f;
+  --color-on-surface: #26343d;
+  --color-outline: #6e7d86;
+  --color-error-dim: #4e0309;
+  --color-primary-fixed: #dde1ff;
+  --color-primary-container: #dde1ff;
+  --color-on-primary: #f8f7ff;
+  --color-inverse-primary: #6d89fa;
+  --color-surface-container-low: #eef4fa;
+  --color-tertiary-container: #6cb4f1;
+  --color-tertiary: #00649a;
+  --color-surface-variant: #d5e5ef;
+  --color-on-primary-fixed-variant: #3352c0;
+  --color-on-tertiary-fixed-variant: #003a5d;
+  --color-surface-container-high: #ddeaf3;
+  --color-on-secondary: #f8f8ff;
+  --color-error: #9f403d;
+  --color-secondary-fixed: #d5e3fc;
+  --color-surface: #f6fafe;
+  --color-on-primary-fixed: #0732a3;
+  --color-secondary-dim: #465468;
+  --color-on-secondary-container: #455367;
+  --color-tertiary-fixed-dim: #5ea7e2;
+  --color-on-secondary-fixed: #324053;
+  --color-on-surface-variant: #52616a;
+  --color-on-secondary-fixed-variant: #4e5c71;
+  --color-inverse-on-surface: #999da1;
+  --color-surface-bright: #f6fafe;
+  --color-surface-container-highest: #d5e5ef;
+  --color-error-container: #fe8983;
+  --color-secondary-fixed-dim: #c7d5ed;
+  --color-on-tertiary-fixed: #001627;
+  --color-on-error-container: #752121;
+  --color-background: #f6fafe;
+  --color-on-error: #fff7f6;
+  --color-outline-variant: #a4b4be;
+  --color-primary: #3755c3;
+  --color-on-primary-container: #2747b6;
+  --color-primary-fixed-dim: #cad2ff;
+  --color-surface-container: #e5eff7;
+  --color-surface-tint: #3755c3;
+  --color-tertiary-dim: #005787;
+  --color-tertiary-fixed: #6cb4f1;
+
+  --radius-DEFAULT: 0.125rem;
+  --radius-lg: 0.25rem;
+  --radius-xl: 0.5rem;
+  --radius-full: 0.75rem;
+}
+
+@layer base {
+  :root {
+    --color-background: #f6fafe;
+    --color-surface: #f6fafe;
+    --color-on-surface: #26343d;
+    --color-surface-container-low: #eef4fa;
+    --color-surface-container: #e5eff7;
+    --color-surface-container-high: #ddeaf3;
+    --color-surface-container-highest: #d5e5ef;
+    --color-on-surface-variant: #52616a;
+    --color-outline: #6e7d86;
+    --color-outline-variant: #a4b4be;
+    --color-primary: #3755c3;
+    --color-on-primary: #f8f7ff;
+    --color-primary-container: #dde1ff;
+    --color-on-primary-container: #2747b6;
+    --color-secondary: #526074;
+    --color-on-secondary: #f8f8ff;
+    --color-secondary-container: #d5e3fc;
+    --color-on-secondary-container: #455367;
+    --color-tertiary: #00649a;
+    --color-on-tertiary: #f6f9ff;
+    --color-tertiary-container: #6cb4f1;
+    --color-on-tertiary-container: #00314f;
+    --color-error: #9f403d;
+    --color-on-error: #fff7f6;
+    --color-error-container: #fe8983;
+    --color-on-error-container: #752121;
+  }
+
+  .dark {
+    --color-background: #0a0f12;
+    --color-surface: #12181c;
+    --color-surface-dim: #0a0f12;
+    --color-surface-bright: #1a2126;
+    --color-on-surface: #e1e2e5;
+    --color-surface-container-lowest: #0d1216;
+    --color-surface-container-low: #1a2126;
+    --color-surface-container: #222a30;
+    --color-surface-container-high: #2a333a;
+    --color-surface-container-highest: #333d45;
+    --color-on-surface-variant: #c0c7cd;
+    --color-outline: #8a9297;
+    --color-outline-variant: #40484d;
+    --color-primary: #adc6ff;
+    --color-on-primary: #002d6f;
+    --color-primary-container: #00439a;
+    --color-on-primary-container: #d8e2ff;
+    --color-secondary: #bfc6dc;
+    --color-on-secondary: #293042;
+    --color-secondary-container: #3f4759;
+    --color-on-secondary-container: #dbe2f9;
+    --color-tertiary: #dfbbdd;
+    --color-on-tertiary: #412742;
+    --color-tertiary-container: #593d59;
+    --color-on-tertiary-container: #fcd7f9;
+    --color-error: #ffb4ab;
+    --color-on-error: #690005;
+    --color-error-container: #93000a;
+    --color-on-error-container: #ffdad6;
+  }
+
+  html, body {
+    @apply font-body bg-background text-on-surface transition-colors duration-300;
+  }
+}
+
+@layer utilities {
+  @media (max-width: 768px) {
+    .no-scrollbar-mobile, .no-scrollbar-mobile * {
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
+    }
+    .no-scrollbar-mobile::-webkit-scrollbar, .no-scrollbar-mobile *::-webkit-scrollbar {
+      display: none !important;
+    }
+  }
+}
+
+.primary-gradient {
+  background: linear-gradient(135deg, #3755c3 0%, #2848b7 100%);
+}
+
+.glass-nav {
+  @apply bg-surface/70 backdrop-blur-xl;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Subtle Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-outline-variant);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-outline);
+}
