@@ -10,11 +10,8 @@ import dotenv from "dotenv";
 dotenv.config();
 
 // Fix for Aiven/Heroku self-signed certificate issues
-process.env.PGSSLMODE = 'no-verify';
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Use environment variables directly in the Pool config instead of runtime overrides if possible
+// but keeping them for now as they are common fixes.
 
 const { Pool } = pg;
 const pool = new Pool({
@@ -22,6 +19,11 @@ const pool = new Pool({
   ssl: {
     rejectUnauthorized: false,
   },
+  connectionTimeoutMillis: 10000, // 10s timeout
+});
+
+pool.on('error', (err) => {
+  console.error('Unexpected error on idle client', err);
 });
 
 const JWT_SECRET = process.env.JWT_SECRET || "the-curated-ledger-secret-key-2024";
@@ -41,9 +43,29 @@ app.use(express.json());
 
 // Database Initialization
 let dbInitialized = false;
+let initializing = false;
+
 async function initDb() {
   if (dbInitialized) return;
+  if (initializing) {
+    // Wait for the ongoing initialization
+    while (initializing) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    return;
+  }
+
+  initializing = true;
   try {
+    // Check if tables already exist to skip heavy initialization
+    const tableCheck = await pool.query("SELECT 1 FROM information_schema.tables WHERE table_name = 's_users' LIMIT 1");
+    if (tableCheck.rows.length > 0) {
+      dbInitialized = true;
+      initializing = false;
+      return;
+    }
+
+    console.log("Initializing database schema...");
     await pool.query(`
       CREATE TABLE IF NOT EXISTS s_accounts (
         id SERIAL PRIMARY KEY,
@@ -311,6 +333,9 @@ async function initDb() {
     dbInitialized = true;
   } catch (err) {
     console.error("Database initialization error:", err);
+    throw err;
+  } finally {
+    initializing = false;
   }
 }
 
@@ -352,7 +377,11 @@ app.get("/api/health", async (req, res) => {
 app.post("/api/auth/login", async (req, res) => {
   const { email, password } = req.body;
   try {
-    if (!dbInitialized) await initDb();
+    // Ensure DB is initialized
+    if (!dbInitialized) {
+      await initDb();
+    }
+    
     const result = await pool.query(`
       SELECT u.*, a.name as account_name 
       FROM s_users u 
@@ -930,24 +959,28 @@ app.delete("/api/users/:id", authenticateToken, async (req, res) => {
   }
 });
 
+// Static files and SPA fallback for production
+if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
+  const distPath = path.join(process.cwd(), 'dist');
+  if (fs.existsSync(distPath)) {
+    app.use(express.static(distPath));
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(distPath, 'index.html'));
+    });
+  }
+}
+
 async function setupApp() {
+  // Background initialization
   initDb().catch(err => console.error("Database initialization background error:", err));
+  
   if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
     app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), 'dist');
-    if (fs.existsSync(distPath)) {
-      app.use(express.static(distPath));
-      app.get('*', (req, res) => {
-        res.sendFile(path.join(distPath, 'index.html'));
-      });
-    }
-  }
-  if (!process.env.VERCEL) {
+    
     app.listen(PORT, "0.0.0.0", () => {
       console.log(`Server running on http://localhost:${PORT}`);
     });
