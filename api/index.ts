@@ -2,12 +2,17 @@ import express from "express";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
-import { createServer as createViteServer } from "vite";
 import pg from "pg";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 
 dotenv.config();
+
+// Fix for Aiven/Heroku self-signed certificate issues
+if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
+  process.env.PGSSLMODE = 'no-verify';
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+}
 
 // Fix for Aiven/Heroku self-signed certificate issues
 // Use environment variables directly in the Pool config instead of runtime overrides if possible
@@ -391,7 +396,7 @@ app.get("/api/health", async (req, res) => {
     const start = Date.now();
     await pool.query("SELECT 1");
     healthInfo.db.connected = true;
-    healthInfo.db.latency = `${Date.now() - start}ms`;
+    (healthInfo.db as any).latency = `${Date.now() - start}ms`;
     
     res.json(healthInfo);
   } catch (err: any) {
@@ -1009,10 +1014,8 @@ if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
 }
 
 async function setupApp() {
-  // Background initialization
-  initDb().catch(err => console.error("Database initialization background error:", err));
-  
   if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
