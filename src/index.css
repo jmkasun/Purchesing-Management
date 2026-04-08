@@ -131,33 +131,30 @@
   }
 }
 
-@layer utilities {
+@utility no-scrollbar-mobile {
   @media (max-width: 768px) {
-    .no-scrollbar-mobile, .no-scrollbar-mobile * {
-      scrollbar-width: none !important;
-      -ms-overflow-style: none !important;
-    }
-    .no-scrollbar-mobile::-webkit-scrollbar, .no-scrollbar-mobile *::-webkit-scrollbar {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    &::-webkit-scrollbar {
       display: none !important;
     }
   }
 }
 
-.primary-gradient {
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility primary-gradient {
   background: linear-gradient(135deg, #3755c3 0%, #2848b7 100%);
 }
 
-.glass-nav {
+@utility glass-nav {
   @apply bg-surface/70 backdrop-blur-xl;
-}
-
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
 }
 
 /* Subtle Scrollbar */
